@@ -83,7 +83,7 @@ init([]) ->
 %% ===================================================================
 
 get_session(Req) ->
-    Cookie_name = ?CONFIG(cookie_name),
+    Cookie_name = ?C_NAME,
     CookieNameAtom = erlang:binary_to_atom(Cookie_name, unicode),
     SID = case cowboy_req:meta(CookieNameAtom, Req) of
         undefined ->
