@@ -116,8 +116,8 @@ create_session(Req) ->
         {storage, Storage},
         {expire, Expire}
     ]]),
-    Req2 = cowboy_req:set_resp_cookie(Cookie_name, SID, Req, Cookie_options),
-    {Pid, Req3}.
+    Req1 = cowboy_req:set_resp_cookie(Cookie_name, SID, Req, Cookie_options),
+    {Pid, Req1}.
 
 ensure_started([]) -> ok;
 ensure_started([App | Rest] = Apps) ->
