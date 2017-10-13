@@ -85,13 +85,7 @@ init([]) ->
 get_session(Req) ->
     Cookie_name = ?C_NAME,
     CookieNameAtom = erlang:binary_to_atom(Cookie_name, unicode),
-    SID = case cowboy_req:meta(CookieNameAtom, Req) of
-        undefined ->
-            #{CookieNameAtom := SID2} = cowboy_req:match_cookies([{CookieNameAtom, [], undefined}], Req),
-            SID2;
-        Result ->
-            Result
-    end,
+    #{CookieNameAtom := SID} = cowboy_req:match_cookies([{CookieNameAtom, [], undefined}], Req),
     case SID of
         undefined ->
             create_session(Req);
@@ -107,13 +101,7 @@ get_session(Req) ->
 
 clear_cookie(Req) ->
     Cookie_name = ?C_NAME,
-    Cookie_options = ?C_OPTIONS,
-    Req2 = cowboy_req:set_meta(Cookie_name, undefined, Req),
-    cowboy_req:set_resp_cookie(
-        Cookie_name,
-        <<"deleted">>,
-        [{set_age, 0}, {local_time, {{1970, 1, 1}, {0, 0, 0}}} | Cookie_options],
-        Req2).
+    cowboy_req:set_resp_cookie(Cookie_name, <<"deleted">>, Req, #{max_age => 0}).
 
 create_session(Req) ->
     %% The cookie value cannot contain any of the following characters:
@@ -128,8 +116,7 @@ create_session(Req) ->
         {storage, Storage},
         {expire, Expire}
     ]]),
-    Req2 = cowboy_req:set_resp_cookie(Cookie_name, SID, Cookie_options, Req),
-    Req3 = cowboy_req:set_meta(Cookie_name, SID, Req2),
+    Req2 = cowboy_req:set_resp_cookie(Cookie_name, SID, Req, Cookie_options),
     {Pid, Req3}.
 
 ensure_started([]) -> ok;
