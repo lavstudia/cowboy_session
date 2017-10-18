@@ -24,4 +24,4 @@
 %% Cookies options
 %% ===================================================================
 
--define(CONFIG(Key, Default), application:get_env(wa, Key, Default)).
+-define(CONFIG(Key, Default), application:get_env(cowboy_session, Key, Default)).
