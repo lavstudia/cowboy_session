@@ -24,7 +24,4 @@
 %% Cookies options
 %% ===================================================================
 
--define(C_NAME, <<"session">>).
--define(C_OPTIONS, #{path => <<"/">>}).
--define(C_EXPIRE, 1440).
--define(C_STORAGE, cowboy_session_storage_ets).
+-define(CONFIG(Key, Default), application:get_env(wa, Key, Default)).

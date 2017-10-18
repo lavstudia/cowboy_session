@@ -61,7 +61,7 @@ touch(Req) ->
 
 start(_StartType, _StartArgs) ->
     {ok, Sup} = supervisor:start_link({local, ?MODULE}, ?MODULE, []),
-    supervisor:start_child(Sup, ?CHILD(?C_STORAGE, worker)),
+    supervisor:start_child(Sup, ?CHILD(?CONFIG(storage, cowboy_session_storage_ets), worker)),
     {ok, Sup}.
 
 stop(_State) ->
@@ -83,7 +83,7 @@ init([]) ->
 %% ===================================================================
 
 get_session(Req) ->
-    Cookie_name = ?C_NAME,
+    Cookie_name = ?CONFIG(session, <<"session">>),
     CookieNameAtom = erlang:binary_to_atom(Cookie_name, unicode),
     #{CookieNameAtom := SID} = cowboy_req:match_cookies([{CookieNameAtom, [], undefined}], Req),
     case SID of
@@ -100,17 +100,17 @@ get_session(Req) ->
     end.
 
 clear_cookie(Req) ->
-    Cookie_name = ?C_NAME,
+    Cookie_name = ?CONFIG(session, <<"session">>),
     cowboy_req:set_resp_cookie(Cookie_name, <<"deleted">>, Req, #{max_age => 0}).
 
 create_session(Req) ->
     %% The cookie value cannot contain any of the following characters:
     %%   ,; \t\r\n\013\014
     SID = list_to_binary(uuid:to_string(uuid:v4())),
-    Cookie_name = ?C_NAME,
-    Cookie_options = ?C_OPTIONS,
-    Storage = ?C_STORAGE,
-    Expire = ?C_EXPIRE,
+    Cookie_name = ?CONFIG(session, <<"session">>),
+    Cookie_options = ?CONFIG(options, #{path => <<"/">>}),
+    Storage = ?CONFIG(storage, cowboy_session_storage_ets),
+    Expire = ?CONFIG(expire, 1440),
     {ok, Pid} = supervisor:start_child(cowboy_session_server_sup, [[
         {sid, SID},
         {storage, Storage},
