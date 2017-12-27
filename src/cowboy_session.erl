@@ -111,7 +111,7 @@ clear_cookie(Req) ->
 create_session(Req) ->
     %% The cookie value cannot contain any of the following characters:
     %%   ,; \t\r\n\013\014
-    SID = list_to_binary(uuid:to_string(uuid:v4())),
+    SID = list_to_binary( uuid:uuid_to_string(uuid:get_v4())),
     Cookie_name = ?CONFIG(session, <<"session">>),
     Cookie_options = ?CONFIG(options, #{path => <<"/">>}),
     Storage = ?CONFIG(storage, cowboy_session_storage_ets),
