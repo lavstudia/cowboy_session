@@ -32,7 +32,6 @@ start() ->
                                                             | {stop, cowboy_req:req()}.
 execute(Req, Env) ->    
     {_, Req1} = get_session(Req),
-    io:format("Call session middleware ~n",[]),	
     {ok, Req1, Env}
 .
 
