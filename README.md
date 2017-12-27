@@ -22,14 +22,12 @@ application:start(uuid),
 application:start(cowboy_session).
 ```
 
-If you want session to be started for each request then use function `cowboy_session:on_request/1` as Cowboy onrequest callback:
+If you want session to be started for each request then use function `cowboy_session:execute/2` as Cowboy middleware callback:
 ```erlang
-cowboy:start_http(http_listener, Nba, [{port, Port}], [
-		{env, [
-			{dispatch, Dispatch}
-		]},
-		{onrequest, fun cowboy_session:on_request/1} %% < setting on_request callback
-	]).
+	{ok, _} = cowboy:start_clear(http, [{port, 8080}], #{
+		env => #{dispatch => Dispatch},
+		middlewares => [cowboy_session, cowboy_router,  cowboy_handler]
+	}),
 ```
 otherwise first call to `cowboy_session:set/3` or `cowboy_session:get/2/3` will initialize session
 

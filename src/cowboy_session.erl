@@ -3,7 +3,7 @@
 %% API
 -export([
     start/0,
-    on_request/1,
+    execute/2,
     get/2, get/3,
     set/3,
     expire/1,
@@ -27,10 +27,15 @@
 start() ->
     ensure_started([?MODULE]).
 
--spec on_request(cowboy_req:req()) -> cowboy_req:req().
-on_request(Req) ->
-    {_Session, Req2} = get_session(Req),
-    Req2.
+-spec execute(cowboy_req:req(), cowboy_middleware:env()) -> {ok, cowboy_req:req(), cowboy_middleware:env()}
+                                                            | {suspend, module(), atom(), [any()]}
+                                                            | {stop, cowboy_req:req()}.
+execute(Req, Env) ->    
+    {_, Req1} = get_session(Req),
+    io:format("Call session middleware ~n",[]),	
+    {ok, Req1, Env}
+.
+
 
 get(Key, Req) ->
     get(Key, undefined, Req).
