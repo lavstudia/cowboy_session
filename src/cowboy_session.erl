@@ -88,8 +88,9 @@ init([]) ->
 
 get_session(Req) ->
     Cookie_name = ?CONFIG(session, <<"session">>),
-    CookieNameAtom = erlang:binary_to_atom(Cookie_name, unicode),
-    #{CookieNameAtom := SID} = cowboy_req:match_cookies([{CookieNameAtom, [], undefined}], Req),
+    Cookies = cowboy_req:parse_cookies(Req),
+    SID = proplists:get_value(Cookie_name, Cookies, undefined),
+
     case SID of
         undefined ->
             create_session(Req);
