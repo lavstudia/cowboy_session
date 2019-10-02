@@ -3,27 +3,26 @@
 
 %% Cowboy_session_storage behaviour
 -behaviour(cowboy_session_storage).
--export([
-	start_link/0,
-	new/1,
-	set/3,
-	get/3,
-	delete/1,
-	stop/1
-]).
+-export([ start_link/0
+		, new/1
+		, set/3
+		, get/3
+		, delete/1
+		, stop/1
+		]).
 
 %% Gen_server behaviour
 -behaviour(gen_server).
--export([
-	init/1,
-	handle_call/3,
-	handle_cast/2,
-	handle_info/2,
-	terminate/2,
-	code_change/3
-]).
+-export([ init/1
+		, handle_call/3
+		, handle_cast/2
+		, handle_info/2
+		, terminate/2
+		, code_change/3
+		]).
 
 -define(TABLE, cowboy_session).
+
 
 %%%===================================================================
 %%% API
@@ -47,15 +46,14 @@ delete(SID) ->
 stop(New_storage) ->
 	gen_server:cast(?MODULE, {stop, New_storage}).
 
-
 %%%===================================================================
 %%% Gen_server callbacks
 %%%===================================================================
 
 init([]) ->
 	?TABLE = ets:new(?TABLE, [public, named_table]),
+	
 	{ok, undefined}.
-
 
 handle_call({get, SID, Key, Default}, _From, State) ->
 	Reply = case ets:lookup(?TABLE, SID) of
@@ -66,23 +64,26 @@ handle_call({get, SID, Key, Default}, _From, State) ->
 				_ -> Default
 			end
 	end,
+
 	{reply, Reply, State};
 
 handle_call(_, _, State) -> {reply, ignored, State}.
 
-
 handle_cast({new, SID}, State) ->
 	true = ets:insert_new(?TABLE, {SID, []}),
+
 	{noreply, State};
 
 handle_cast({set, SID, Key, Value}, State) ->
 	[{SID, Data}] = ets:lookup(?TABLE, SID),
 	Data2 = lists:keystore(Key, 1, Data, {Key, Value}),
 	ets:insert(?TABLE, {SID, Data2}),
+
 	{noreply, State};
 
 handle_cast({delete, SID}, State) ->
 	ets:delete(?TABLE, SID),
+
 	{noreply, State};
 
 handle_cast({stop, _New_storage}, State) ->
@@ -96,8 +97,7 @@ handle_info(_, State) -> {noreply, State}.
 
 terminate(_Reason, _State) ->
 	ets:delete(?TABLE),
+
 	ok.
 
-
-code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.

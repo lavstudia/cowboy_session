@@ -8,6 +8,7 @@
 -behaviour(supervisor).
 -export([init/1]).
 
+
 %% ===================================================================
 %% API functions
 %% ===================================================================
@@ -24,4 +25,5 @@ init([]) ->
 			{cowboy_session_server, start_link, []},
 			transient, 5000, worker, [cowboy_session_server]}
 	],
+
 	{ok, {Restart_strategy, Children}}.

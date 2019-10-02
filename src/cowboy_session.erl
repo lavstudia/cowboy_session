@@ -1,14 +1,16 @@
 -module(cowboy_session).
 
+%% Config
+-include("cowboy_session_config.hrl").
+
 %% API
--export([
-    start/0,
-    execute/2,
-    get/2, get/3,
-    set/3,
-    expire/1,
-    touch/1
-]).
+-export([ start/0
+        , get/2, get/3
+        , set/3
+        , execute/2
+        , expire/1
+        , touch/1
+        ]).
 
 -behaviour(application).
 -export([start/2, stop/1]).
@@ -16,28 +18,15 @@
 -behaviour(supervisor).
 -export([init/1]).
 
-%% Config
--include("cowboy_session_config.hrl").
 
 %% ===================================================================
 %% API functions
 %% ===================================================================
 
 -spec start() -> ok.
-start() ->
-    ensure_started([?MODULE]).
+start() -> ensure_started([?MODULE]).
 
--spec execute(cowboy_req:req(), cowboy_middleware:env()) ->
-    {ok, cowboy_req:req(), cowboy_middleware:env()} |
-    {suspend, module(), atom(), [any()]} |
-    {stop, cowboy_req:req()}.
-execute(Req, Env) ->    
-    {_, Req1} = get_session(Req),
-
-    {ok, Req1, Env}.
-
-get(Key, Req) ->
-    get(Key, undefined, Req).
+get(Key, Req) -> get(Key, undefined, Req).
 
 get(Key, Default, Req) ->
     {Pid, Req2} = get_session(Req),
@@ -50,6 +39,15 @@ set(Key, Value, Req) ->
     cowboy_session_server:set(Pid, Key, Value),
 
     {ok, Req2}.
+
+-spec execute(cowboy_req:req(), cowboy_middleware:env()) ->
+    {ok, cowboy_req:req(), cowboy_middleware:env()} |
+    {suspend, module(), atom(), [any()]} |
+    {stop, cowboy_req:req()}.
+execute(Req, Env) ->    
+    {_, Req1} = get_session(Req),
+
+    {ok, Req1, Env}.
 
 expire(Req) ->
     {Pid, Req2} = get_session(Req),
@@ -74,8 +72,7 @@ start(_StartType, _StartArgs) ->
 
     {ok, Sup}.
 
-stop(_State) ->
-    ok.
+stop(_State) -> ok.
 
 %% ===================================================================
 %% Supervisor callbacks
@@ -99,14 +96,13 @@ get_session(Req) ->
     SID = proplists:get_value(Cookie_name, Cookies, undefined),
 
     case SID of
-        undefined ->
-            create_session(Req);
+        undefined -> create_session(Req);
         _ ->
             case gproc:lookup_local_name({cowboy_session, SID}) of
-                undefined ->
-                    create_session(Req, SID);
+                undefined -> create_session(Req, SID);
                 Pid ->
                     cowboy_session_server:touch(Pid),
+
                     {Pid, Req}
             end
     end.
@@ -139,8 +135,7 @@ create_session(Req, SID) ->
 ensure_started([]) -> ok;
 ensure_started([App | Rest] = Apps) ->
     case application:start(App) of
-        ok ->
-            ensure_started(Rest);
+        ok -> ensure_started(Rest);
         {error, {already_started, App}} ->
             ensure_started(Rest);
         {error, {not_started, Dependency}} ->

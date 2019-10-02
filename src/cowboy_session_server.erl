@@ -1,26 +1,26 @@
 -module(cowboy_session_server).
 -author('chvanikoff <chvanikoff@gmail.com>').
 
+-include("cowboy_session_config.hrl").
+
 %% API
--export([
-	start_link/1,
-	touch/1,
-	stop/1,
-	get/3,
-	set/3,
-	sid/1
-]).
+-export([ start_link/1
+		, touch/1
+		, stop/1
+		, get/3
+		, set/3
+		, sid/1
+		]).
 
 %% Gen_server behaviour
 -behaviour(gen_server).
--export([
-	init/1,
-	handle_call/3,
-	handle_cast/2,
-	handle_info/2,
-	terminate/2,
-	code_change/3
-]).
+-export([ init/1
+		, handle_call/3
+		, handle_cast/2
+		, handle_info/2
+		, terminate/2
+		, code_change/3
+		]).
 
 -record(state, {
 	sid,
@@ -28,6 +28,7 @@
 	expire_tref,
 	storage
 }).
+
 
 %%%===================================================================
 %%% API
@@ -62,7 +63,8 @@ init(Config) ->
 	{_, Storage} = lists:keyfind(storage, 1, Config),
 	Storage:new(SID),
 	gproc:add_local_name({cowboy_session, SID}),
-	{ok, Expire_TRef} = timer:exit_after(Expire * 1000, expire),
+	{ok, Expire_TRef} = timer:exit_after(
+		timer:seconds(Expire), ?EXPIRE),
 	{ok, #state{
 		sid = SID,
 		expire = Expire,
@@ -87,7 +89,8 @@ handle_cast({set, Key, Value}, #state{sid = SID, storage = Storage} = State) ->
 
 handle_cast(touch, #state{expire = Expire, expire_tref = Expire_TRef} = State) ->
 	{ok, cancel} = timer:cancel(Expire_TRef),
-	{ok, New_TRef} = timer:exit_after(Expire * 1000, expire),
+	{ok, New_TRef} = timer:exit_after(
+		timer:seconds(Expire), ?EXPIRE),
 	{noreply, State#state{expire_tref = New_TRef}};
 
 handle_cast(stop, #state{expire_tref = Expire_TRef} = State) ->
@@ -103,6 +106,7 @@ handle_info(_, State) -> {noreply, State}.
 terminate(_Reason, #state{storage = Storage, sid = SID}) ->
 	Storage:delete(SID),
 	gproc:goodbye(),
+
 	ok.
 
 

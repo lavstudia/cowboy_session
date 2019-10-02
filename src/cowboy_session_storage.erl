@@ -9,13 +9,13 @@
 	SID :: bitstring().
 
 -callback set(SID, Key, Value) -> ok when
-	SID :: bitstring(),
-	Key :: term(),
+	SID   :: bitstring(),
+	Key   :: term(),
 	Value :: term().
 
 -callback get(SID, Key, Default) -> term() when
-	SID :: bitstring(),
-	Key :: term(),
+	SID 	:: bitstring(),
+	Key 	:: term(),
 	Default :: term().
 
 -callback delete(SID) -> ok when
