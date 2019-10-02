@@ -57,7 +57,8 @@ expire(Req) ->
     {ok, Req3}.
 
 touch(Req) ->
-    {_Pid, Req2} = get_session(Req),
+    {Pid, Req2} = get_session(Req),
+    cowboy_session_server:touch(Pid),
 
     {ok, Req2}.
 
@@ -120,15 +121,16 @@ create_session(Req) ->
 
 create_session(Req, SID) ->
     Cookie_name = ?CONFIG(session, <<"session">>),
+    Expire = ?CONFIG(expire, 1440),
     Cookie_options = ?CONFIG(options, #{path => <<"/">>}),
     Storage = ?CONFIG(storage, cowboy_session_storage_ets),
-    Expire = ?CONFIG(expire, 1440),
     {ok, Pid} = supervisor:start_child(cowboy_session_server_sup, [[
         {sid, SID},
         {storage, Storage},
         {expire, Expire}
     ]]),
-    Req1 = cowboy_req:set_resp_cookie(Cookie_name, SID, Req, Cookie_options),
+    Req1 = cowboy_req:set_resp_cookie(Cookie_name, SID, Req, 
+        Cookie_options#{ max_age => Expire }),
 
     {Pid, Req1}.
 

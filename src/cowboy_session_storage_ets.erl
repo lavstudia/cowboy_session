@@ -52,7 +52,7 @@ stop(New_storage) ->
 
 init([]) ->
 	?TABLE = ets:new(?TABLE, [public, named_table]),
-	
+
 	{ok, undefined}.
 
 handle_call({get, SID, Key, Default}, _From, State) ->
@@ -73,27 +73,21 @@ handle_cast({new, SID}, State) ->
 	true = ets:insert_new(?TABLE, {SID, []}),
 
 	{noreply, State};
-
 handle_cast({set, SID, Key, Value}, State) ->
 	[{SID, Data}] = ets:lookup(?TABLE, SID),
 	Data2 = lists:keystore(Key, 1, Data, {Key, Value}),
 	ets:insert(?TABLE, {SID, Data2}),
 
 	{noreply, State};
-
 handle_cast({delete, SID}, State) ->
 	ets:delete(?TABLE, SID),
 
 	{noreply, State};
-
 handle_cast({stop, _New_storage}, State) ->
 	{stop, normal, State};
-
 handle_cast(_, State) -> {noreply, State}.
 
-
 handle_info(_, State) -> {noreply, State}.
-
 
 terminate(_Reason, _State) ->
 	ets:delete(?TABLE),

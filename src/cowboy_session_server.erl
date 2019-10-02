@@ -37,78 +37,81 @@
 start_link(Config) ->
 	gen_server:start_link(?MODULE, Config, []).
 
-touch(Pid) ->
-	gen_server:cast(Pid, touch).
+touch(Pid) -> gen_server:cast(Pid, touch).
 
 set(Pid, Key, Value) ->
 	gen_server:cast(Pid, {set, Key, Value}).
 
-get(Pid, Key, Default) ->
+get(Pid, Key, Default) -> 
 	gen_server:call(Pid, {get, Key, Default}).
 
-sid(Pid) ->
-	gen_server:call(Pid, sid).
+sid(Pid) -> gen_server:call(Pid, sid).
 
-stop(Pid) ->
-	gen_server:cast(Pid, stop).
+stop(Pid) -> gen_server:cast(Pid, stop).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
-
 init(Config) ->
+	process_flag(trap_exit, true),
+
 	{_, SID} = lists:keyfind(sid, 1, Config),
 	{_, Expire} = lists:keyfind(expire, 1, Config),
 	{_, Storage} = lists:keyfind(storage, 1, Config),
 	Storage:new(SID),
-	gproc:add_local_name({cowboy_session, SID}),
-	{ok, Expire_TRef} = timer:exit_after(
-		timer:seconds(Expire), ?EXPIRE),
-	{ok, #state{
-		sid = SID,
-		expire = Expire,
-		expire_tref = Expire_TRef,
-		storage = Storage
-	}}.
 
+	gproc:add_local_name({cowboy_session, SID}),
+
+	{ok, Expire_TRef} = timer:exit_after(
+		timer:seconds(Expire), self(), ?EXPIRE),
+
+	{ok, #state{
+		sid 		= SID,
+		expire 		= Expire,
+		expire_tref = Expire_TRef,
+		storage 	= Storage
+	}}.
 
 handle_call({get, Key, Default}, _From, #state{sid = SID, storage = Storage} = State) ->
 	Value = Storage:get(SID, Key, Default),
+	
 	{reply, Value, State};
-
 handle_call(sid, _From, #state{sid = SID} = State) ->
 	{reply, SID, State};
-
 handle_call(_, _, State) -> {reply, ignored, State}.
-
 
 handle_cast({set, Key, Value}, #state{sid = SID, storage = Storage} = State) ->
 	ok = Storage:set(SID, Key, Value),
-	{noreply, State};
 
+	{noreply, State};
 handle_cast(touch, #state{expire = Expire, expire_tref = Expire_TRef} = State) ->
 	{ok, cancel} = timer:cancel(Expire_TRef),
 	{ok, New_TRef} = timer:exit_after(
-		timer:seconds(Expire), ?EXPIRE),
-	{noreply, State#state{expire_tref = New_TRef}};
+		timer:seconds(Expire), self(), ?EXPIRE),
 
+	{noreply, State#state{expire_tref = New_TRef}};
 handle_cast(stop, #state{expire_tref = Expire_TRef} = State) ->
 	timer:cancel(Expire_TRef),
-	{stop, normal, State#state{expire_tref = nil}};
 
+	{stop, normal, State#state{expire_tref = nil}};
 handle_cast(_, State) -> {noreply, State}.
 
+handle_info({'EXIT', _, _}, State = #state{storage = Storage, sid = SID}) -> 
+	stop_(SID, Storage),
 
+	gen_server:stop(self(), kill, 100),
+
+	{noreply, State};
 handle_info(_, State) -> {noreply, State}.
 
-
 terminate(_Reason, #state{storage = Storage, sid = SID}) ->
-	Storage:delete(SID),
-	gproc:goodbye(),
+	stop_(SID, Storage),
 
 	ok.
 
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
+stop_(SID, Storage) ->
+	Storage:delete(SID),
+	gproc:goodbye().

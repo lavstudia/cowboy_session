@@ -1,5 +1,5 @@
 deps
 ebin
 erl_crash.dump
-.DS_Store
+.rebar3
 *.json
