@@ -98,9 +98,9 @@ handle_cast(stop, #state{expire_tref = Expire_TRef} = State) ->
 handle_cast(_, State) -> {noreply, State}.
 
 handle_info({'EXIT', _, _}, State = #state{storage = Storage, sid = SID}) -> 
-	stop_(SID, Storage),
+ 	stop_(SID, Storage),
 
-	gen_server:stop(self(), kill, 100),
+%% 	gen_server:stop(self(), kill, 100),
 
 	{noreply, State};
 handle_info(_, State) -> {noreply, State}.
